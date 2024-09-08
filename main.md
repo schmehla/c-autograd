@@ -1,20 +1,22 @@
 # Grammar
 
-Abbrevations:
+Inspired by [YouTube help](https://www.youtube.com/watch?v=SToUyjAsaFk).
+
+### Abbrevations
 
 -   E: Expression
 -   T: Term
 -   F: Factor
 
-Rules:
+### Rules
 
--   E &rarr; T + E
--   E &rarr; T - E
--   E &rarr; T
--   T &rarr; F \* T
--   T &rarr; F / T
--   T &rarr; F
--   F &rarr; Var
--   F &rarr; Num
--   F &rarr; (E)
--   F &rarr; -F
+-   E &rarr; T + E | T - E | T
+-   or: E &rarr; T (+|- T)+
+-   T &rarr; F \* T | F / T | F
+-   F &rarr; Var | Num | (E) | -F
+
+### Tokens
+
+-   Var: \w+
+-   Num: \d+(\.\w+)?
+-   and: +, -, \*, /, (, ),
