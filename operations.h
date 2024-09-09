@@ -5,7 +5,7 @@
 
 float eval(Node *n, VarValue *var_values, size_t n_var_values);
 
-Node *derivative(Node *n);
+Node *deriv(Node *n);
 Node *copy(Node *n);
 
 #endif
