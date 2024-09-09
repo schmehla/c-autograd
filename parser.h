@@ -6,13 +6,18 @@
 enum BIN_OP { ADD, SUB, MUL, DIV };
 enum UN_OP { NEG };
 
-enum NODE_TYPE { BIN_NODE, UN_NODE, VAR_NODE, NUM_NODE };
+enum NODE_TYPE {
+  BIN_NODE,
+  UN_NODE,
+  VAR_NODE,
+  NUM_NODE
+}; // binary node, unary node
 
 typedef struct Node Node;
 
 typedef struct {
-  Node *lhs;
-  Node *rhs;
+  Node *lhs; // left-hand side
+  Node *rhs; // right-hand side
   enum BIN_OP op;
 } BinNode;
 
@@ -46,14 +51,18 @@ typedef struct {
   float value;
 } VarValue;
 
-Node *parseF(Lexer *l);
-Node *parseT(Lexer *l);
-Node *parseE(Lexer *l);
+Node *create_bin_node(enum BIN_OP op, Node *lhs, Node *rhs);
+Node *create_un_node(enum UN_OP op, Node *n);
+Node *create_var_node(const char *name);
+Node *create_num_node(float num);
 
-Node *parse(Lexer *l);
-void free_node(Node *n);
+Node *parse_fac(Lexer *l);
+Node *parse_term(Lexer *l);
+Node *parse_expr(Lexer *l);
+
+Node *get_parse_tree(Lexer *l);
+void free_parse_tree(Node *n);
 
 void print(Node *n);
-float eval(Node *n, VarValue *var_values, size_t n_var_values);
 
 #endif

@@ -7,7 +7,7 @@
 typedef enum { PLUS, MINUS, STAR, SLASH, L_PAR, R_PAR, VAR, NUM, EOS } Token;
 
 typedef struct {
-  const char *data;
+  char *data;
   size_t tok_idx;
   size_t nxt_tok_idx;
   char *latest_var;

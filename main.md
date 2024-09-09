@@ -11,9 +11,9 @@ Inspired by [YouTube help](https://www.youtube.com/watch?v=SToUyjAsaFk).
 ### Rules
 
 -   E &rarr; T + E | T - E | T
--   or: E &rarr; T (+|- T)+
+-   for correct associativity: E &rarr; T (+|- T)+
 -   T &rarr; F \* T | F / T | F
--   or: T &rarr; F (\*|/ F)+
+-   for correct associativity: T &rarr; F (\*|/ F)+
 -   F &rarr; Var | Num | (E) | -F
 
 ### Tokens

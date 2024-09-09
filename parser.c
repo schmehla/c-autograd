@@ -4,7 +4,31 @@
 #include <stdio.h>
 #include <string.h>
 
-Node *parseF(Lexer *l) {
+Node *create_bin_node(enum BIN_OP op, Node *lhs, Node *rhs) {
+  Node *n = malloc(sizeof(Node));
+  n->node_type = BIN_NODE;
+  union NodeData *nd = malloc(sizeof(union NodeData));
+  nd->bin_node.lhs = lhs;
+  nd->bin_node.rhs = rhs;
+  n->node_data = nd;
+  return n;
+}
+
+Node *create_un_node(enum UN_OP op, Node *n) { return NULL; }
+
+Node *create_var_node(const char *name) { return NULL; }
+
+Node *create_num_node(float num) { return NULL; }
+
+Node *parse_fac(Lexer *l) {
+  if (peek_token(l) == L_PAR) {
+    advance_token(l);
+    Node *n = parse_expr(l);
+    if (peek_token(l) != R_PAR)
+      assert(false);
+    advance_token(l);
+    return n;
+  }
   union NodeData *nd = malloc(sizeof(union NodeData));
   Node *n = malloc(sizeof(Node));
   if (peek_token(l) == VAR) {
@@ -23,18 +47,10 @@ Node *parseF(Lexer *l) {
     n->node_data = nd;
     return n;
   }
-  if (peek_token(l) == L_PAR) {
-    advance_token(l);
-    n = parseE(l);
-    if (peek_token(l) != R_PAR)
-      assert(false);
-    advance_token(l);
-    return n;
-  }
   if (peek_token(l) == MINUS) {
     advance_token(l);
     nd->un_node.op = NEG;
-    nd->un_node.n = parseF(l);
+    nd->un_node.n = parse_fac(l);
     n->node_type = UN_NODE;
     n->node_data = nd;
     return n;
@@ -42,28 +58,31 @@ Node *parseF(Lexer *l) {
   assert(false);
 }
 
-Node *parseT(Lexer *l) {
-  Node *n = parseF(l);
-  if (peek_token(l) == STAR || peek_token(l) == SLASH) {
-    union NodeData *nd = malloc(sizeof(union NodeData));
-    Node *mul_n = malloc(sizeof(Node));
-    if (peek_token(l) == STAR) {
-      nd->bin_node.op = MUL;
+Node *parse_term(Lexer *l) {
+  Node *n = parse_fac(l);
+  while (true) {
+    if (peek_token(l) == STAR || peek_token(l) == SLASH) {
+      union NodeData *nd = malloc(sizeof(union NodeData));
+      Node *mul_div_n = malloc(sizeof(Node));
+      if (peek_token(l) == STAR)
+        nd->bin_node.op = MUL;
+      // Node *mul = create_bin_node(MUL, n, parse_fac(l));
+      if (peek_token(l) == SLASH)
+        nd->bin_node.op = DIV;
+      advance_token(l);
+      nd->bin_node.lhs = n;
+      nd->bin_node.rhs = parse_fac(l);
+      mul_div_n->node_type = BIN_NODE;
+      mul_div_n->node_data = nd;
+      n = mul_div_n;
+    } else {
+      return n;
     }
-    if (peek_token(l) == SLASH)
-      nd->bin_node.op = DIV;
-    advance_token(l);
-    nd->bin_node.lhs = n;
-    nd->bin_node.rhs = parseT(l);
-    mul_n->node_type = BIN_NODE;
-    mul_n->node_data = nd;
-    return mul_n;
   }
-  return n;
 }
 
-Node *parseE(Lexer *l) {
-  Node *n = parseT(l);
+Node *parse_expr(Lexer *l) {
+  Node *n = parse_term(l);
   while (true) {
     if (peek_token(l) == PLUS || peek_token(l) == MINUS) {
       union NodeData *nd = malloc(sizeof(union NodeData));
@@ -74,7 +93,7 @@ Node *parseE(Lexer *l) {
         nd->bin_node.op = SUB;
       advance_token(l);
       nd->bin_node.lhs = n;
-      nd->bin_node.rhs = parseT(l);
+      nd->bin_node.rhs = parse_term(l);
       add_sub_n->node_type = BIN_NODE;
       add_sub_n->node_data = nd;
       n = add_sub_n;
@@ -112,36 +131,22 @@ void print(Node *n) {
   printf(")");
 }
 
-float eval(Node *n, VarValue *var_values, size_t n_var_values) {
+Node *get_parse_tree(Lexer *l) { return parse_expr(l); }
+
+void free_parse_tree(Node *n) {
   if (n->node_type == BIN_NODE) {
-    float lhs_eval = eval(n->node_data->bin_node.lhs, var_values, n_var_values);
-    float rhs_eval = eval(n->node_data->bin_node.rhs, var_values, n_var_values);
-    if (n->node_data->bin_node.op == ADD)
-      return lhs_eval + rhs_eval;
-    if (n->node_data->bin_node.op == SUB)
-      return lhs_eval - rhs_eval;
-    if (n->node_data->bin_node.op == MUL)
-      return lhs_eval * rhs_eval;
-    if (n->node_data->bin_node.op == DIV)
-      return lhs_eval / rhs_eval;
+    free_parse_tree(n->node_data->bin_node.lhs);
+    free_parse_tree(n->node_data->bin_node.rhs);
   }
   if (n->node_type == UN_NODE) {
-    float eval_ = eval(n->node_data->un_node.n, var_values, n_var_values);
-    if (n->node_data->un_node.op == NEG)
-      return -eval_;
+    free_parse_tree(n->node_data->un_node.n);
   }
   if (n->node_type == VAR_NODE) {
-    char *name = n->node_data->var_node.name;
-    for (size_t i = 0; i < n_var_values; ++i) {
-      if (strcmp(name, var_values[i].name) == 0)
-        return var_values[i].value;
-    }
-    assert(false);
+    free(n->node_data->var_node.name);
   }
   if (n->node_type == NUM_NODE) {
-    return n->node_data->num_node.num;
+    // do nothing
   }
-  assert(false);
+  free(n->node_data);
+  free(n);
 }
-
-Node *parse(Lexer *l) { return parseE(l); }

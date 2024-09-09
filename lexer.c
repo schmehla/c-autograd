@@ -1,6 +1,7 @@
 #include "lexer.h"
 
 #include <assert.h>
+#include <string.h>
 #include <sys/types.h>
 
 char nxt(Lexer *l) { return l->data[l->nxt_tok_idx]; }
@@ -10,9 +11,11 @@ bool is_alpha(char c) {
   return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z';
 } // TODO no lib reimpl
 
-Lexer *new_lexer(const char *_data) {
+Lexer *new_lexer(const char *data) {
+  // TODO copy data
   Lexer *l = malloc(sizeof(Lexer));
-  l->data = _data;
+  l->data = malloc(strlen(data) + 1);
+  strcpy(l->data, data);
   l->tok_idx = 0;
   l->latest_var = NULL;
   return l;
@@ -22,6 +25,8 @@ void free_lexer(Lexer *l) {
   if (l->latest_var) {
     free(l->latest_var);
   }
+  free(l->data);
+  free(l);
 }
 
 void parse_num(Lexer *l) { // TODO no lib reimpl
