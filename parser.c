@@ -5,101 +5,100 @@
 #include <string.h>
 
 Node *create_bin_node(enum BIN_OP op, Node *lhs, Node *rhs) {
-  Node *n = malloc(sizeof(Node));
-  n->node_type = BIN_NODE;
+  Node *node = malloc(sizeof(Node));
+  node->node_type = BIN_NODE;
   union NodeData *nd = malloc(sizeof(union NodeData));
+  nd->bin_node.op = op;
   nd->bin_node.lhs = lhs;
   nd->bin_node.rhs = rhs;
-  n->node_data = nd;
-  return n;
+  node->node_data = nd;
+  return node;
 }
 
-Node *create_un_node(enum UN_OP op, Node *n) { return NULL; }
+Node *create_un_node(enum UN_OP op, Node *child) {
+  Node *node = malloc(sizeof(Node));
+  union NodeData *nd = malloc(sizeof(union NodeData));
+  nd->un_node.op = NEG;
+  nd->un_node.child = child;
+  node->node_type = UN_NODE;
+  node->node_data = nd;
+  return node;
+}
 
-Node *create_var_node(const char *name) { return NULL; }
+Node *create_var_node(const char *name) {
+  Node *node = malloc(sizeof(Node));
+  union NodeData *nd = malloc(sizeof(union NodeData));
+  nd->var_node.name = malloc((strlen(name) + 1) * sizeof(char));
+  strcpy(nd->var_node.name, name);
+  node->node_type = VAR_NODE;
+  node->node_data = nd;
+  return node;
+}
 
-Node *create_num_node(float num) { return NULL; }
+Node *create_num_node(float num) {
+  Node *node = malloc(sizeof(Node));
+  union NodeData *nd = malloc(sizeof(union NodeData));
+  nd->num_node.num = num;
+  node->node_type = NUM_NODE;
+  node->node_data = nd;
+  return node;
+}
 
 Node *parse_fac(Lexer *l) {
   if (peek_token(l) == L_PAR) {
     advance_token(l);
-    Node *n = parse_expr(l);
+    Node *node = parse_expr(l);
     if (peek_token(l) != R_PAR)
       assert(false);
     advance_token(l);
-    return n;
+    return node;
   }
-  union NodeData *nd = malloc(sizeof(union NodeData));
-  Node *n = malloc(sizeof(Node));
   if (peek_token(l) == VAR) {
     advance_token(l);
-    char *id = malloc((strlen(l->latest_var) + 1) * sizeof(char));
-    strcpy(id, l->latest_var);
-    nd->var_node.name = id;
-    n->node_type = VAR_NODE;
-    n->node_data = nd;
-    return n;
+    return create_var_node(l->latest_var);
   }
   if (peek_token(l) == NUM) {
     advance_token(l);
-    nd->num_node.num = l->latest_num;
-    n->node_type = NUM_NODE;
-    n->node_data = nd;
-    return n;
+    return create_num_node(l->latest_num);
   }
   if (peek_token(l) == MINUS) {
     advance_token(l);
-    nd->un_node.op = NEG;
-    nd->un_node.n = parse_fac(l);
-    n->node_type = UN_NODE;
-    n->node_data = nd;
-    return n;
+    return create_un_node(NEG, parse_fac(l));
   }
   assert(false);
 }
 
 Node *parse_term(Lexer *l) {
-  Node *n = parse_fac(l);
+  Node *node = parse_fac(l);
   while (true) {
-    if (peek_token(l) == STAR || peek_token(l) == SLASH) {
-      union NodeData *nd = malloc(sizeof(union NodeData));
-      Node *mul_div_n = malloc(sizeof(Node));
-      if (peek_token(l) == STAR)
-        nd->bin_node.op = MUL;
-      // Node *mul = create_bin_node(MUL, n, parse_fac(l));
-      if (peek_token(l) == SLASH)
-        nd->bin_node.op = DIV;
+    if (peek_token(l) == STAR) {
       advance_token(l);
-      nd->bin_node.lhs = n;
-      nd->bin_node.rhs = parse_fac(l);
-      mul_div_n->node_type = BIN_NODE;
-      mul_div_n->node_data = nd;
-      n = mul_div_n;
-    } else {
-      return n;
+      node = create_bin_node(MUL, node, parse_fac(l));
+      continue;
     }
+    if (peek_token(l) == SLASH) {
+      advance_token(l);
+      node = create_bin_node(DIV, node, parse_fac(l));
+      continue;
+    }
+    return node;
   }
 }
 
 Node *parse_expr(Lexer *l) {
-  Node *n = parse_term(l);
+  Node *node = parse_term(l);
   while (true) {
-    if (peek_token(l) == PLUS || peek_token(l) == MINUS) {
-      union NodeData *nd = malloc(sizeof(union NodeData));
-      Node *add_sub_n = malloc(sizeof(Node));
-      if (peek_token(l) == PLUS)
-        nd->bin_node.op = ADD;
-      if (peek_token(l) == MINUS)
-        nd->bin_node.op = SUB;
+    if (peek_token(l) == PLUS) {
       advance_token(l);
-      nd->bin_node.lhs = n;
-      nd->bin_node.rhs = parse_term(l);
-      add_sub_n->node_type = BIN_NODE;
-      add_sub_n->node_data = nd;
-      n = add_sub_n;
-    } else {
-      return n;
+      node = create_bin_node(ADD, node, parse_term(l));
+      continue;
     }
+    if (peek_token(l) == MINUS) {
+      advance_token(l);
+      node = create_bin_node(SUB, node, parse_term(l));
+      continue;
+    }
+    return node;
   }
 }
 
@@ -120,7 +119,7 @@ void print(Node *n) {
   if (n->node_type == UN_NODE) {
     if (n->node_data->un_node.op == NEG)
       printf("-");
-    print(n->node_data->un_node.n);
+    print(n->node_data->un_node.child);
   }
   if (n->node_type == VAR_NODE) {
     printf("%s", n->node_data->var_node.name);
@@ -139,7 +138,7 @@ void free_parse_tree(Node *n) {
     free_parse_tree(n->node_data->bin_node.rhs);
   }
   if (n->node_type == UN_NODE) {
-    free_parse_tree(n->node_data->un_node.n);
+    free_parse_tree(n->node_data->un_node.child);
   }
   if (n->node_type == VAR_NODE) {
     free(n->node_data->var_node.name);

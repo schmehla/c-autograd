@@ -22,7 +22,7 @@ typedef struct {
 } BinNode;
 
 typedef struct {
-  Node *n;
+  Node *child;
   enum UN_OP op;
 } UnNode;
 
