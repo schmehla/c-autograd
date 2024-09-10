@@ -7,12 +7,15 @@
 typedef enum { PLUS, MINUS, STAR, SLASH, L_PAR, R_PAR, VAR, NUM, EOS } Token;
 
 typedef struct {
-  char *data;
-  size_t tok_idx;
-  size_t nxt_tok_idx;
-  char *latest_var;
-  float latest_num;
+    char *data;
+    size_t tok_idx;
+    size_t nxt_tok_idx;
+    char *latest_var;
+    float latest_num;
 } Lexer;
+
+void _parse_num(Lexer *l);
+void _parse_var(Lexer *l);
 
 Lexer *new_lexer(const char *_data);
 void free_lexer(Lexer *l);

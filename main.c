@@ -1,35 +1,34 @@
-#include "lexer.h"
 #include "operations.h"
-#include "parser.h"
+#include "optimizer.h"
 #include <stdio.h>
 
 int main(void) {
-  // struct Expr *e = new_expr(MUL, new_val(0.1f), new_val(0.2f));
-  // print_expr(e);
-  // printf("\n");
-  // printf("eval: %f", eval(e));
+    char expr[] = "(x-2)*(x-3) + y*y";
 
-  // char expr_str[] = "(2 * 3 / (1.1 - (-2/2) * (-0.2) / x*x + 101 - 101)) --
-  // 2";
-  char expr_str[] = "(1 * 2 * x * x)";
-  Lexer *lexer = new_lexer(expr_str);
-  Node *parse_tree = get_parse_tree(lexer);
+    VarValue v[] = {{.name = "x", .value = 10}, {.name = "y", .value = 1}};
+    VarValues var_values = {.arr = v, .len = 2};
 
-  print(parse_tree);
+    printf("\nmin: %f\n", optim(expr, &var_values));
 
-  VarValue var_values[] = {{.name = "x", .value = 10}};
-  float e = eval(parse_tree, var_values, 1);
-  printf("\nevals to: %f\n", e);
+    for (size_t i = 0; i < var_values.len; ++i) {
+        printf("%s = %f\n", var_values.arr[i].name, var_values.arr[i].value);
+    }
 
-  Node *d_parse_tree = deriv(parse_tree);
-  print(d_parse_tree);
+    // printf("derive by x: \n");
+    // Node *d_parse_tree_dx = deriv(parse_tree, "x");
+    // print(d_parse_tree_dx);
+    // printf("\nevals to: %f\n", eval(d_parse_tree_dx, &var_values));
+    // printf("\n");
+    // free_parse_tree(d_parse_tree_dx);
 
-  e = eval(d_parse_tree, var_values, 1);
-  printf("\nevals to: %f\n", e);
+    // printf("derive by y: \n");
+    // Node *d_parse_tree_dy = deriv(parse_tree, "y");
+    // print(d_parse_tree_dy);
+    // printf("\nevals to: %f\n", eval(d_parse_tree_dy, &var_values));
+    // printf("\n");
+    // free_parse_tree(d_parse_tree_dy);
 
-  free_lexer(lexer);
-  free_parse_tree(parse_tree);
-  free_parse_tree(d_parse_tree);
-  printf("\n");
-  return 0;
+    // free_parse_tree(parse_tree);
+    printf("\n");
+    return 0;
 }
