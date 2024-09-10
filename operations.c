@@ -37,34 +37,6 @@ float eval(Node *n, VarValues *var_values) {
     assert(false);
 }
 
-// void simpl(Node *n, Node *parent) {
-//   if (n->type == BIN_NODE) {
-//     BinNode bn = n->data->bin_node;
-//     simpl(bn.lhs, n);
-//     simpl(bn.rhs, n);
-//     if (bn.lhs->type == NUM_NODE && bn.rhs->type == NUM_NODE) {
-//       free(n); // TODO this does not work without resetting parents pointer
-//       n = create_num_node(bn.lhs->data->num_node.num +
-//                           bn.rhs->data->num_node.num);
-//     }
-//   }
-//   if (n->type == UN_NODE) {
-//     UnNode un = n->data->un_node;
-//     simpl(un.child, n);
-//     if (un.child->type == NUM_NODE) {
-//       free(n);
-//       n = create_num_node(-un.child->data->num_node.num);
-//     }
-//   }
-// if (n->node_type == VAR_NODE) {
-//   VarNode vn = n->node_data->var_node;
-// }
-// if (n->node_type == NUM_NODE) {
-//   NumNode nn = n->node_data->num_node;
-// }
-// assert(false);
-// }
-
 Node *copy(Node *n) {
     if (n->type == BIN_NODE) {
         BinNode bn = n->data->bin_node;
@@ -125,7 +97,7 @@ Node *deriv(Node *n, char *by) {
     }
     if (n->type == UN_NODE) {
         if (n->data->un_node.op == NEG)
-            return create_un_node(NEG, copy(n));
+            return copy(n);
         assert(false);
     }
     assert(false);
