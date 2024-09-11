@@ -6,7 +6,7 @@
 
 const float LR = 10e-3; // learning rate
 const float MAX_GRAD = 10e-4;
-const size_t MAX_STEPS = 100000;
+const size_t MAX_STEPS = 10e6;
 
 float optim(char *expr, VarValues *var_values) {
     Node *parse_tree = get_parse_tree(expr);
@@ -14,28 +14,28 @@ float optim(char *expr, VarValues *var_values) {
     for (size_t i = 0; i < var_values->len; ++i) {
         deriv_trees[i] = deriv(parse_tree, var_values->arr[i].name);
     }
-    bool less_than_max_grad;
+    bool done;
     for (size_t t = 0; t < MAX_STEPS; ++t) {
         // printf("iter: %zu, function value: %.2f", t,
         //        eval(parse_tree, var_values));
-        less_than_max_grad = true;
+        done = true;
         for (size_t i = 0; i < var_values->len; ++i) {
             // printf(", %s = %.2f ", var_values->arr[i].name,
             //        var_values->arr[i].value);
             float grad = eval(deriv_trees[i], var_values);
             if (isnan(grad) || isinf(grad)) {
-                less_than_max_grad = false;
+                done = false;
                 break;
             }
             // printf(" (grad: %f)", grad);
             var_values->arr[i].value -= LR * grad;
-            less_than_max_grad = (fabs(grad) < MAX_GRAD) && less_than_max_grad;
+            done = (fabs(grad) < MAX_GRAD) && done;
         }
         // printf("\n");
-        if (less_than_max_grad)
+        if (done)
             break;
     }
-    if (!less_than_max_grad)
+    if (!done)
         printf("No minima found!\n");
     float min = eval(parse_tree, var_values);
     free_parse_tree(parse_tree);

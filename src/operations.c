@@ -57,7 +57,6 @@ Node *copy(Node *n) {
     assert(false);
 }
 
-// TODO derive by what?
 Node *deriv(Node *n, char *by) {
     if (n->type == NUM_NODE)
         return create_num_node(0);
