@@ -1,18 +1,16 @@
 #include "lexer.h"
 
 #include <assert.h>
+#include <ctype.h>
 #include <string.h>
 #include <sys/types.h>
 
 char _nxt(Lexer *l) { return l->data[l->nxt_tok_idx]; }
 
-bool _is_digit(char c) { return c >= '0' && c <= '9'; } // TODO no lib reimpl
-bool _is_alpha(char c) {
-    return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z';
-} // TODO no lib reimpl
+bool _is_d(char c) { return isdigit((unsigned char)c); }
+bool _is_a(char c) { return isalpha((unsigned char)c); }
 
 Lexer *new_lexer(const char *data) {
-    // TODO copy data
     Lexer *l = malloc(sizeof(Lexer));
     l->data = malloc(strlen(data) + 1);
     strcpy(l->data, data);
@@ -31,7 +29,7 @@ void free_lexer(Lexer *l) {
 
 void _parse_num(Lexer *l) { // TODO no lib reimpl
     float num = 0;
-    while (_nxt(l) != '\0' && _is_digit(_nxt(l))) {
+    while (_nxt(l) != '\0' && _is_d(_nxt(l))) {
         num *= 10;
         num += (_nxt(l) - '0');
         l->nxt_tok_idx++;
@@ -39,7 +37,7 @@ void _parse_num(Lexer *l) { // TODO no lib reimpl
     if (_nxt(l) != '\0' && _nxt(l) == '.') {
         float d = 10;
         l->nxt_tok_idx++;
-        while (_nxt(l) != '\0' && _is_digit(_nxt(l))) {
+        while (_nxt(l) != '\0' && _is_d(_nxt(l))) {
             num += (_nxt(l) - '0') / d;
             d *= 10;
             l->nxt_tok_idx++;
@@ -50,9 +48,8 @@ void _parse_num(Lexer *l) { // TODO no lib reimpl
 
 void _parse_var(Lexer *l) {
     size_t max_var_len = 20;
-    char var[max_var_len];
     for (size_t i = 0; i < max_var_len; ++i) {
-        if (!_is_alpha(_nxt(l))) {
+        if (!_is_a(_nxt(l))) {
             break;
         }
         l->nxt_tok_idx++;
@@ -102,11 +99,11 @@ Token peek_token(Lexer *l) {
         l->nxt_tok_idx++;
         return R_PAR;
     }
-    if (_is_digit(_nxt(l))) {
+    if (_is_d(_nxt(l))) {
         _parse_num(l);
         return NUM;
     }
-    if (_is_alpha(_nxt(l))) {
+    if (_is_a(_nxt(l))) {
         _parse_var(l);
         return VAR;
     }

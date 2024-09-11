@@ -3,7 +3,7 @@
 #include <stdio.h>
 
 int main(void) {
-    char expr[] = "(x-2)*(x-3)*x + (y-10)*y";
+    char expr[] = "(x-2)*(x-3)*x + (y-10)*y + x+y";
 
     VarValue v[] = {{.name = "x", .value = 1}, {.name = "y", .value = 1}};
     VarValues var_values = {.arr = v, .len = 2};
