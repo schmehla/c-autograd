@@ -3,6 +3,6 @@
 
 #include "operations.h"
 
-float optim(char *expr, VarValues *var_values);
+float optim(char *expr, VarTable *var_values);
 
 #endif

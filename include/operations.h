@@ -1,20 +1,24 @@
 #ifndef OPERATIONS_H_INCLUDED
 #define OPERATIONS_H_INCLUDED
 
-#include "parser.h"
+#include "node.h"
+#include <stddef.h>
 
 typedef struct {
     char *name;
     float value;
-} VarValue;
+} Var;
 
 typedef struct {
-    VarValue *arr;
+    Var *arr;
     size_t len;
-} VarValues;
+} VarTable;
 
-float eval(Node *n, VarValues *var_values);
-Node *deriv(Node *n, char *by);
-Node *copy(Node *n);
+float eval(Node *node, VarTable *var_values);
+// void grad(Node *n, VarTable *var_values);
+
+// Node *deriv(Node *n, char *by);
+// Node *copy(Node *n);
+void backprop(Node *node, VarTable *var_values);
 
 #endif
