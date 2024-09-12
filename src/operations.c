@@ -1,105 +1,99 @@
 #include "operations.h"
+#include "node.h"
 // #include "parser.h"
 #include <assert.h>
 #include <stdbool.h>
 #include <string.h>
 
-float eval(Node *node, VarTable *var_values) {
+void eval(Node *node, VarTable *var_table) {
     if (node->type == BIN_NODE) {
         BinNode bn = node->data->bin_node;
+        eval(bn.lhs, var_table);
+        eval(bn.rhs, var_table);
         if (bn.op == ADD)
-            return eval(bn.lhs, var_values) + eval(bn.rhs, var_values);
+            node->val = bn.lhs->val + bn.rhs->val;
         if (bn.op == SUB)
-            return eval(bn.lhs, var_values) - eval(bn.rhs, var_values);
+            node->val = bn.lhs->val - bn.rhs->val;
         if (bn.op == MUL)
-            return eval(bn.lhs, var_values) * eval(bn.rhs, var_values);
+            node->val = bn.lhs->val * bn.rhs->val;
         if (bn.op == DIV)
-            return eval(bn.lhs, var_values) / eval(bn.rhs, var_values);
+            node->val = bn.lhs->val / bn.rhs->val;
+        return;
     }
     if (node->type == UN_NODE) {
         UnNode un = node->data->un_node;
-        if (node->data->un_node.op == NEG)
-            return -eval(un.child, var_values);
-        assert(false);
+        eval(un.child, var_table);
+        if (un.op == NEG)
+            node->val = -un.child->val;
+        return;
     }
     if (node->type == VAR_NODE) {
         VarNode vn = node->data->var_node;
-        for (size_t i = 0; i < var_values->len; ++i) {
-            if (strcmp(vn.name, var_values->arr[i].name) == 0)
-                return var_values->arr[i].value;
+        for (size_t i = 0; i < var_table->len; ++i) {
+            if (strcmp(vn.name, var_table->arr[i].name) == 0) {
+                node->val = var_table->arr[i].value;
+                return;
+            }
         }
         assert(false);
     }
     if (node->type == NUM_NODE) {
         NumNode nn = node->data->num_node;
-        return nn.num;
+        node->val = nn.num;
+        return;
     }
     assert(false);
 }
 
-void backprop(Node *node, VarTable *var_values) {}
+void _backprop(Node *node) {
+    if (node->type == BIN_NODE) {
+        BinNode bn = node->data->bin_node;
+        if (bn.op == ADD) {
+            bn.lhs->grad += node->grad;
+            _backprop(bn.lhs);
+            bn.rhs->grad += node->grad;
+            _backprop(bn.rhs);
+        }
+        if (bn.op == SUB) {
+            bn.lhs->grad += node->grad;
+            _backprop(bn.lhs);
+            bn.rhs->grad -= node->grad;
+            _backprop(bn.rhs);
+        }
+        if (bn.op == MUL) {
+            bn.lhs->grad += bn.rhs->val * node->grad;
+            _backprop(bn.lhs);
+            bn.rhs->grad += bn.lhs->val * node->grad;
+            _backprop(bn.rhs);
+        }
+        if (bn.op == DIV) {
+            bn.lhs->grad += 1 / bn.rhs->val * node->grad;
+            _backprop(bn.lhs);
+            bn.rhs->grad +=
+                -bn.lhs->val / (bn.rhs->val * bn.rhs->val) * node->grad;
+            _backprop(bn.rhs);
+        }
+        return;
+    }
+    if (node->type == UN_NODE) {
+        UnNode un = node->data->un_node;
+        if (un.op == NEG) {
+            un.child->grad += -node->grad;
+            _backprop(un.child);
+        }
+        return;
+    }
+    if (node->type == VAR_NODE) {
+        return;
+    }
+    if (node->type == NUM_NODE) {
+        return;
+    }
+    assert(false);
+}
 
-// Node *copy(Node *n) {
-//     if (n->type == BIN_NODE) {
-//         BinNode bn = n->data->bin_node;
-//         return create_bin_node(bn.op, copy(bn.lhs), copy(bn.rhs));
-//     }
-//     if (n->type == UN_NODE) {
-//         UnNode un = n->data->un_node;
-//         return create_un_node(un.op, copy(un.child));
-//     }
-//     if (n->type == VAR_NODE) {
-//         VarNode vn = n->data->var_node;
-//         return create_var_node(vn.name);
-//     }
-//     if (n->type == NUM_NODE) {
-//         NumNode nn = n->data->num_node;
-//         return create_num_node(nn.num);
-//     }
-//     assert(false);
-// }
-
-// Node *deriv(Node *n, char *by) {
-//     if (n->type == NUM_NODE)
-//         return create_num_node(0);
-//     if (n->type == VAR_NODE) {
-//         if (strcmp(n->data->var_node.name, by) == 0)
-//             return create_num_node(1);
-//         return create_num_node(0);
-//     }
-//     if (n->type == BIN_NODE) {
-//         // Node *lhs_deriv = derivative(n->node_data->bin_node.lhs);
-//         // Node *rhs_deriv = derivative(n->node_data->bin_node.rhs);
-//         // Node *lhs_copy = copy(n->node_data->bin_node.lhs);
-//         // Node *rhs_copy = copy(n->node_data->bin_node.rhs);
-//         Node *lhs = n->data->bin_node.lhs;
-//         Node *rhs = n->data->bin_node.rhs;
-//         if (n->data->bin_node.op == ADD)
-//             return create_bin_node(ADD, deriv(lhs, by), deriv(rhs, by));
-//         if (n->data->bin_node.op == SUB)
-//             return create_bin_node(SUB, deriv(lhs, by), deriv(rhs, by));
-//         if (n->data->bin_node.op == MUL) {
-//             // d (u(x) * v(x)) / dx = du(x)/dx * v(x) + u(x) * dv(x)/dx
-//             // lhs: u
-//             // rhs: v
-//             return create_bin_node(
-//                 ADD, create_bin_node(MUL, deriv(lhs, by), copy(rhs)),
-//                 create_bin_node(MUL, copy(lhs), deriv(rhs, by)));
-//         }
-//         if (n->data->bin_node.op == DIV) {
-//             // d (u(x) / v(x)) / dx = v(x)² * [du(x)/dx * v(x) - u(x) *
-//             // dv(x)/dx] lhs: u rhs: v
-//             Node *lhs_sq = create_bin_node(MUL, copy(lhs), copy(lhs));
-//             Node *n = create_bin_node(
-//                 ADD, create_bin_node(MUL, deriv(lhs, by), copy(rhs)),
-//                 create_bin_node(MUL, copy(lhs), deriv(rhs, by)));
-//             return create_bin_node(MUL, lhs_sq, n);
-//         }
-//     }
-//     if (n->type == UN_NODE) {
-//         if (n->data->un_node.op == NEG)
-//             return copy(n);
-//         assert(false);
-//     }
-//     assert(false);
-// }
+void backprop(Node *node) {
+    zero_grad(node);
+    node->grad = 1;
+    _backprop(node);
+}

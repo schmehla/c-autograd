@@ -43,6 +43,7 @@ struct Node { // typedef is at the top
     enum NODE_TYPE type;
     union NodeData *data;
     float grad;
+    float val;
 };
 
 typedef struct NodeList {

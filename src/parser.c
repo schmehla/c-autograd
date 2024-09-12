@@ -2,7 +2,6 @@
 #include "lexer.h"
 #include "node.h"
 #include <assert.h>
-#include <stdio.h>
 
 Node *_parse_fac(Lexer *l, NodeList **vars) {
     if (peek_token(l) == L_PAR) {

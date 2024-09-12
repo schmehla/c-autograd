@@ -2,7 +2,6 @@
 #define OPTIMIZER_H_INCLUDED
 
 #include "operations.h"
-
-float optim(char *expr, VarTable *var_values);
+float optim(char *expr, VarTable *var_table);
 
 #endif

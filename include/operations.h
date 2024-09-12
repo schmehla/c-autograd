@@ -14,11 +14,12 @@ typedef struct {
     size_t len;
 } VarTable;
 
-float eval(Node *node, VarTable *var_values);
+void eval(Node *node, VarTable *var_table);
 // void grad(Node *n, VarTable *var_values);
 
 // Node *deriv(Node *n, char *by);
 // Node *copy(Node *n);
-void backprop(Node *node, VarTable *var_values);
+void _backprop(Node *node);
+void backprop(Node *node);
 
 #endif
