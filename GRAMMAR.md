@@ -4,17 +4,21 @@ Inspired by [YouTube help](https://www.youtube.com/watch?v=SToUyjAsaFk).
 
 ### Abbrevations
 
+-   AL: Assignment List
+-   A: Assignment
 -   E: Expression
 -   T: Term
 -   F: Factor
 
 ### Rules
 
+-   AL &rarr; (A\n)\*A
+-   A &rarr; Var = E
 -   E &rarr; T + E | T - E | T
 -   for correct associativity: E &rarr; T (+|- T)+
 -   T &rarr; F \* T | F / T | F
 -   for correct associativity: T &rarr; F (\*|/ F)+
--   F &rarr; Var | Num | (E) | -F
+-   F &rarr; Var | Num | \(E\) | -F
 
 ### Tokens
 

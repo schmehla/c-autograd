@@ -3,17 +3,14 @@
 
 #include "lexer.h"
 #include "node.h"
+#include "node_list.h"
 
-typedef struct {
-    Node *root;
-    NodeList **vars;
-} ParseTree;
+NodeList *_parse_assignm_list(Lexer *l, NodeList *free_vars);
+Node *_parse_assignm(Lexer *l, NodeList *free_vars);
+Node *_parse_fac(Lexer *l, NodeList *free_vars);
+Node *_parse_term(Lexer *l, NodeList *free_vars);
+Node *_parse_expr(Lexer *l, NodeList *free_vars);
 
-Node *_parse_fac(Lexer *l, NodeList **vars);
-Node *_parse_term(Lexer *l, NodeList **vars);
-Node *_parse_expr(Lexer *l, NodeList **vars);
-
-ParseTree *get_parse_tree(char *expr);
-void free_parse_tree(ParseTree *pt);
+Node *parse(char *expr, NodeList *free_vars);
 
 #endif

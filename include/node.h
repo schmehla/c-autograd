@@ -1,70 +1,57 @@
 #ifndef NODE_H_INCLUDED
 #define NODE_H_INCLUDED
 
-enum BIN_OP { ADD, SUB, MUL, DIV };
-enum UN_OP { NEG };
-
-enum NODE_TYPE {
-    BIN_NODE,
-    UN_NODE,
-    VAR_NODE,
-    NUM_NODE
-}; // binary node, unary node
+#include <stdbool.h>
+#include <stdio.h>
 
 typedef struct Node Node;
 
-typedef struct {
-    Node *lhs; // left-hand side
-    Node *rhs; // right-hand side
-    enum BIN_OP op;
-} BinNode;
-
-typedef struct {
-    Node *child;
-    enum UN_OP op;
-} UnNode;
-
-typedef struct {
-    char *name;
-} VarNode;
-
-typedef struct {
-    float num;
-} NumNode;
-
-union NodeData {
-    BinNode bin_node;
-    UnNode un_node;
-    VarNode var_node;
-    NumNode num_node;
-};
-
 struct Node { // typedef is at the top
-    enum NODE_TYPE type;
-    union NodeData *data;
-    float grad;
+    char *name;
     float val;
+    void (*eval)(Node *this);
+    float grad;
+    void (*backprop)(Node *this);
+    Node **children;
+    size_t n_children;
+    size_t topo_lvl;
+    bool visited;
 };
 
-typedef struct NodeList {
-    Node *data;
-    struct NodeList *next;
-} NodeList;
+void nop(Node *this);
+void eval_add(Node *this);
+void eval_sub(Node *this);
+void eval_mul(Node *this);
+void eval_div(Node *this);
+void eval_neg(Node *this);
 
-Node *create_bin_node(enum BIN_OP op, Node *lhs, Node *rhs, NodeList **vars);
-Node *create_un_node(enum UN_OP op, Node *n, NodeList **vars);
-Node *create_var_node(const char *name, NodeList **vars);
-Node *create_num_node(float num, NodeList **vars);
+void backprop_add(Node *this);
+void backprop_sub(Node *this);
+void backprop_mul(Node *this);
+void backprop_div(Node *this);
+void backprop_neg(Node *this);
 
-void zero_grad(Node *node);
+Node *_new_node(const char *name, float val, void (*eval)(Node *this),
+                void (*backprop)(Node *this), Node **children,
+                size_t n_children);
 
+Node *_new_bin_node(const char *name, void (*eval)(Node *this),
+                    void (*backprop)(Node *this), Node *child_l, Node *child_r);
+Node *new_num_node(float val);
+Node *new_var_node(const char *name);
+
+Node *new_add_node(const char *name, Node *child_l, Node *child_r);
+Node *new_sub_node(const char *name, Node *child_l, Node *child_r);
+Node *new_mul_node(const char *name, Node *child_l, Node *child_r);
+Node *new_div_node(const char *name, Node *child_l, Node *child_r);
+Node *new_neg_node(const char *name, Node *child);
+
+void assign_var_node(Node *var_node, Node *child);
+void unvisit(Node *root);
+void set_topo_lvl(Node *root, size_t lvl);
+void zero_grad(Node *root);
+void full_eval(Node *root);
+void full_backprop(Node *root);
 void free_node(Node *node);
-
-NodeList **empty_node_list();
-void node_list_append(NodeList **node_list, Node *data);
-void free_node_list(NodeList **node_list);
-Node *find_by_name(NodeList **node_list, const char *name);
-
-void print(Node *n);
 
 #endif

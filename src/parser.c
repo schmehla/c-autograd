@@ -1,79 +1,99 @@
 #include "parser.h"
 #include "lexer.h"
 #include "node.h"
+#include "node_list.h"
 #include <assert.h>
 
-Node *_parse_fac(Lexer *l, NodeList **vars) {
+NodeList *_parse_assignm_list(Lexer *l, NodeList *free_vars) {
+    NodeList *assignments = new_node_list();
+    while (true) {
+        push_back(assignments, _parse_assignm(l, free_vars));
+        if (peek_token(l) != NEWLINE || peek_token(l) == EOS) {
+            assert(false);
+        }
+        scan_token(l);
+    }
+    // assert(free_vars->first == NULL && free_vars->last == NULL);
+}
+
+Node *_parse_assignm(Lexer *l, NodeList *free_vars) {
+    if (peek_token(l) != VAR)
+        assert(false);
+    scan_token(l);
+    Node *var_node = new_var_node(l->latest_var);
+    if (peek_token(l) != EQUALS)
+        assert(false);
+    Node *expr_node = _parse_expr(l, free_vars);
+    assign_var_node(var_node, expr_node);
+    return var_node;
+}
+
+Node *_parse_fac(Lexer *l, NodeList *free_vars) {
     if (peek_token(l) == L_PAR) {
-        advance_token(l);
-        Node *node = _parse_expr(l, vars);
+        scan_token(l);
+        Node *node = _parse_expr(l, free_vars);
         if (peek_token(l) != R_PAR)
             assert(false);
-        advance_token(l);
+        scan_token(l);
         return node;
     }
     if (peek_token(l) == VAR) {
-        advance_token(l);
-        return create_var_node(l->latest_var, vars);
+        scan_token(l);
+        Node *var_node = find_by_name(free_vars, l->latest_var);
+        if (var_node == NULL) {
+            var_node = new_var_node(l->latest_var);
+            push_back(free_vars, var_node);
+        }
+        return var_node;
     }
     if (peek_token(l) == NUM) {
-        advance_token(l);
-        return create_num_node(l->latest_num, vars);
+        scan_token(l);
+        return new_num_node(l->latest_num);
     }
     if (peek_token(l) == MINUS) {
-        advance_token(l);
-        return create_un_node(NEG, _parse_fac(l, vars), vars);
+        scan_token(l);
+        return new_neg_node(NULL, _parse_fac(l, free_vars));
     }
     assert(false);
 }
 
-Node *_parse_term(Lexer *l, NodeList **vars) {
-    Node *node = _parse_fac(l, vars);
+Node *_parse_term(Lexer *l, NodeList *free_vars) {
+    Node *node = _parse_fac(l, free_vars);
     while (true) {
         if (peek_token(l) == STAR) {
-            advance_token(l);
-            node = create_bin_node(MUL, node, _parse_fac(l, vars), vars);
+            scan_token(l);
+            node = new_mul_node(NULL, node, _parse_fac(l, free_vars));
             continue;
         }
         if (peek_token(l) == SLASH) {
-            advance_token(l);
-            node = create_bin_node(DIV, node, _parse_fac(l, vars), vars);
+            scan_token(l);
+            node = new_div_node(NULL, node, _parse_fac(l, free_vars));
             continue;
         }
         return node;
     }
 }
 
-Node *_parse_expr(Lexer *l, NodeList **vars) {
-    Node *node = _parse_term(l, vars);
+Node *_parse_expr(Lexer *l, NodeList *free_vars) {
+    Node *node = _parse_term(l, free_vars);
     while (true) {
         if (peek_token(l) == PLUS) {
-            advance_token(l);
-            node = create_bin_node(ADD, node, _parse_term(l, vars), vars);
+            scan_token(l);
+            node = new_add_node(NULL, node, _parse_term(l, free_vars));
             continue;
         }
         if (peek_token(l) == MINUS) {
-            advance_token(l);
-            node = create_bin_node(SUB, node, _parse_term(l, vars), vars);
+            scan_token(l);
+            node = new_sub_node(NULL, node, _parse_term(l, free_vars));
             continue;
         }
         return node;
     }
 }
 
-ParseTree *get_parse_tree(char *expr) {
+Node *parse(char *expr, NodeList *free_vars) {
     Lexer *l = new_lexer(expr);
-    NodeList **vars = empty_node_list();
-    Node *root = _parse_expr(l, vars);
+    Node *parse_tree = _parse_expr(l, free_vars);
     free_lexer(l);
-    ParseTree *parse_tree = malloc(sizeof(ParseTree));
-    parse_tree->root = root;
-    parse_tree->vars = vars;
     return parse_tree;
-}
-
-void free_parse_tree(ParseTree *pt) {
-    free_node(pt->root);
-    free_node_list(pt->vars);
-    free(pt);
 }
