@@ -4,96 +4,143 @@
 #include "node_list.h"
 #include <assert.h>
 
-NodeList *_parse_assignm_list(Lexer *l, NodeList *free_vars) {
-    NodeList *assignments = new_node_list();
-    while (true) {
-        push_back(assignments, _parse_assignm(l, free_vars));
-        if (peek_token(l) != NEWLINE || peek_token(l) == EOS) {
-            assert(false);
-        }
-        scan_token(l);
-    }
-    // assert(free_vars->first == NULL && free_vars->last == NULL);
-}
+/*
+ * The actual formal grammar for the parser comes from this YouTube video:
+ * https://www.youtube.com/watch?v=SToUyjAsaFk
+ * Watching it helps massively to understand this code.
+ * There are non-terminals called factors (F), terms (T) and expressions (E).
+ * Variables (Var) and numbers (Num) are terminal.
+ * Production rules:
+ *   F -> Var | Num | E | -F
+ *   T → F * T | F / T | F
+ *   E → T + E | T - E | T
+ */
 
-Node *_parse_assignm(Lexer *l, NodeList *free_vars) {
-    if (peek_token(l) != VAR)
-        assert(false);
-    scan_token(l);
-    Node *var_node = new_var_node(l->latest_var);
-    if (peek_token(l) != EQUALS)
-        assert(false);
-    Node *expr_node = _parse_expr(l, free_vars);
-    assign_var_node(var_node, expr_node);
-    return var_node;
-}
+// Forward declaration for cyclically dependent functions.
+Node *_parse_term(Lexer *l, NodeList *numeric_vars);
+Node *_parse_expr(Lexer *l, NodeList *numeric_vars);
 
-Node *_parse_fac(Lexer *l, NodeList *free_vars) {
-    if (peek_token(l) == L_PAR) {
+/**
+ * Parses a factor (like in 2 * x, 2 and x is a factor). This can be either be a
+ * variable, a number, an expression (see _parse_expr) or a negated factor.
+ * The production rule is: F -> Var | Num | E | -F
+ * If a production is applied that produces a non-terminal, further recursive
+ * calls follow.
+ *
+ * @private
+ * @param l Lexer instance.
+ * @param numeric_vars List of nodes that only have a (numeric) value and no
+                       children.
+ * @return A node with child nodes if recursive calls happened.
+ */
+Node *_parse_fac(Lexer *l, NodeList *numeric_vars) {
+    Node *node;
+    switch (peek_token(l)) {
+    case L_PAR:
         scan_token(l);
-        Node *node = _parse_expr(l, free_vars);
+        node = _parse_expr(l, numeric_vars);
         if (peek_token(l) != R_PAR)
             assert(false);
         scan_token(l);
-        return node;
-    }
-    if (peek_token(l) == VAR) {
+        break;
+    case VAR:
         scan_token(l);
-        Node *var_node = find_by_name(free_vars, l->latest_var);
-        if (var_node == NULL) {
-            var_node = new_var_node(l->latest_var);
-            push_back(free_vars, var_node);
+        node = find_by_name(numeric_vars, l->latest_var);
+        if (node == NULL) {
+            node = new_var_node(l->latest_var);
+            push_back(numeric_vars, node);
         }
-        return var_node;
-    }
-    if (peek_token(l) == NUM) {
+        break;
+    case NUM:
         scan_token(l);
-        return new_num_node(l->latest_num);
-    }
-    if (peek_token(l) == MINUS) {
+        node = new_num_node(l->latest_num);
+        break;
+    case MINUS:
         scan_token(l);
-        return new_neg_node(NULL, _parse_fac(l, free_vars));
+        node = new_neg_node(NULL, _parse_fac(l, numeric_vars));
+        break;
+    default:
+        assert(false); // TODO replace all assertions with errors
+        break;
     }
-    assert(false);
+    return node;
 }
 
-Node *_parse_term(Lexer *l, NodeList *free_vars) {
-    Node *node = _parse_fac(l, free_vars);
-    while (true) {
-        if (peek_token(l) == STAR) {
-            scan_token(l);
-            node = new_mul_node(NULL, node, _parse_fac(l, free_vars));
-            continue;
+/**
+ * Parses a term (like in 2 * [..], [..] is a term).
+ * The production rule is: T → F * T | F / T | F
+ * If a production is applied that produces a non-terminal, further recursive
+ * calls follow. The node = new..(.., node..) call replaces the node with a new
+ * node that is put on "top" of it. This ensures proper associativity, as the
+ * resulting tree implies left-brackets.
+ *
+ * @private
+ * @param l Lexer instance.
+ * @param numeric_vars List of nodes that only have a (numeric) value and no
+                       children.
+ * @return A node with child nodes if recursive calls happened.
+ */
+Node *_parse_term(Lexer *l, NodeList *numeric_vars) {
+    Node *node = _parse_fac(l, numeric_vars);
+    for (Token tok = peek_token(l); tok == STAR || tok == SLASH;
+         tok = peek_token(l)) {
+        scan_token(l);
+        switch (tok) {
+        case STAR:
+            node = new_mul_node(NULL, node, _parse_term(l, numeric_vars));
+            break;
+        case SLASH:
+            node = new_div_node(NULL, node, _parse_term(l, numeric_vars));
+            break;
+        default:
+            assert(false);
+            break;
         }
-        if (peek_token(l) == SLASH) {
-            scan_token(l);
-            node = new_div_node(NULL, node, _parse_fac(l, free_vars));
-            continue;
-        }
-        return node;
     }
+    return node;
 }
 
-Node *_parse_expr(Lexer *l, NodeList *free_vars) {
-    Node *node = _parse_term(l, free_vars);
-    while (true) {
-        if (peek_token(l) == PLUS) {
-            scan_token(l);
-            node = new_add_node(NULL, node, _parse_term(l, free_vars));
-            continue;
+/**
+ * Parses an expression (like in 2 + 4, 2 is the expression).
+ * The production rule is: E → T + E | T - E | T
+ * If a production is applied that produces a non-terminal, further recursive
+ * calls follow. The node = new..(.., node..) call replaces the node with a new
+ * node that is put on "top" of it. This ensures proper associativity, as the
+ * resulting tree implies left-brackets.
+ *
+ * @private
+ * @param l Lexer instance.
+ * @param numeric_vars List of nodes that only have a (numeric) value and no
+                       children.
+ * @return A node with child nodes if recursive calls happened.
+ */
+Node *_parse_expr(Lexer *l, NodeList *numeric_vars) {
+    Node *node = _parse_term(l, numeric_vars);
+    for (Token tok = peek_token(l); tok == PLUS || tok == MINUS;
+         tok = peek_token(l)) {
+        scan_token(l);
+        switch (tok) {
+        case PLUS:
+            node = new_add_node(NULL, node, _parse_term(l, numeric_vars));
+            break;
+        case MINUS:
+            node = new_sub_node(NULL, node, _parse_term(l, numeric_vars));
+            break;
+        default:
+            assert(false);
+            break;
         }
-        if (peek_token(l) == MINUS) {
-            scan_token(l);
-            node = new_sub_node(NULL, node, _parse_term(l, free_vars));
-            continue;
-        }
-        return node;
     }
+    return node;
 }
 
-Node *parse(char *expr, NodeList *free_vars) {
+/*******************************************************************************
+ * PUBLIC API
+ ******************************************************************************/
+
+Node *parse(char *expr, NodeList *numeric_vars) {
     Lexer *l = new_lexer(expr);
-    Node *parse_tree = _parse_expr(l, free_vars);
+    Node *parse_tree = _parse_expr(l, numeric_vars);
     free_lexer(l);
     return parse_tree;
 }

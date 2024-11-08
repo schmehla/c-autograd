@@ -49,7 +49,7 @@ NodeList *new_node_list() {
 void free_node_list(NodeList *list) {
     _Elem *curr = list->first;
     while (curr != NULL) {
-        free_node(curr->data);
+        free_numeric_var_node(curr->data); // TODO this is bad
         _Elem *next = curr->next;
         free(curr);
         curr = next;

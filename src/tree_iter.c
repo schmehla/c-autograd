@@ -37,13 +37,3 @@ Node *next_in_topo(TreeIter *it) {
     }
     return it->curr;
 }
-
-// Node *next_leaf(TreeIter *it) {
-//     while (true) {
-//         next_in_topo(it);
-//         if (it->curr == NULL)
-//             return NULL;
-//         if (it->curr->n_children == 0)
-//             return it->curr;
-//     }
-// }

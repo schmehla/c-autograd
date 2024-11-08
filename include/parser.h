@@ -1,16 +1,17 @@
 #ifndef PARSER_H_INCLUDED
 #define PARSER_H_INCLUDED
 
-#include "lexer.h"
 #include "node.h"
 #include "node_list.h"
 
-NodeList *_parse_assignm_list(Lexer *l, NodeList *free_vars);
-Node *_parse_assignm(Lexer *l, NodeList *free_vars);
-Node *_parse_fac(Lexer *l, NodeList *free_vars);
-Node *_parse_term(Lexer *l, NodeList *free_vars);
-Node *_parse_expr(Lexer *l, NodeList *free_vars);
-
-Node *parse(char *expr, NodeList *free_vars);
+/**
+ * Returns a parse tree instance for the expression.
+ *
+ * @param expr String containing the expression to parse.
+ * @param numeric_vars List of nodes that only have a (numeric) value and no
+                       children. These are represented by e.g. A = 2, B = 1
+ * @return New lexer instance.
+ */
+Node *parse(char *expr, NodeList *numeric_vars);
 
 #endif

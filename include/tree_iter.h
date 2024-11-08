@@ -13,6 +13,5 @@ typedef struct {
 TreeIter *new_tree_iter(Node *node);
 void free_tree_iter(TreeIter *it);
 Node *next_in_topo(TreeIter *it);
-// Node *next_leaf(TreeIter *it);
 
 #endif
