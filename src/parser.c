@@ -7,7 +7,7 @@
 /*
  * The actual formal grammar for the parser comes from this YouTube video:
  * https://www.youtube.com/watch?v=SToUyjAsaFk
- * Watching it helps massively to understand this code.
+ * Watching it helps to understand this code.
  * There are non-terminals called factors (F), terms (T) and expressions (E).
  * Variables (Var) and numbers (Num) are terminal.
  * Production rules:

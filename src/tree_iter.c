@@ -4,6 +4,10 @@
 #include <assert.h>
 #include <stdlib.h>
 
+/*******************************************************************************
+ * PUBLIC API
+ ******************************************************************************/
+
 TreeIter *new_tree_iter(Node *node) {
     assert(node->topo_lvl != -1);
     TreeIter *it = malloc(sizeof(TreeIter));

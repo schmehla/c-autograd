@@ -66,48 +66,33 @@ Node *new_var_node(const char *name);
 void unvisit(Node *root);
 
 /**
- * This function should has to be called before any backprop call. Could be
- * moved into the backprop function but is called on every run then (not
- * needed). A `topo_lvl` number for every node exists for a topological
- * iterator. It needs a topology level to properly find the next node.
+ * Evaluate a tree. The value of the root contains the final evaluation value.
  *
- * @param root Root node of the tree to clean.
- * @param lvl Topology level to set on root.
- */
-void set_topo_lvl(Node *root, size_t lvl);
-
-/**
- *
- *
- * @param root
- */
-void zero_grad(Node *root);
-
-/**
- *
- *
- * @param root
+ * @param root Root node of the tree.
  */
 void eval(Node *root);
 
 /**
+ * Backprop on a tree. Every child node gets the partial derivative with regard
+ * to this itself.
  *
- *
- * @param root
+ * @param root Root node of the tree.
  */
 void backprop(Node *root);
 
 /**
+ * Free all nodes in a tree except for numeric variable nodes. These as they are
+ * indexed by their own node list which is used to free them.
  *
- *
- * @param root
+ * @param root Root node of the tree to free.
  */
 void free_node(Node *root);
 
 /**
+ * Free a numeric variable node. This function should be called when iterating
+ * over the list of numeric variable nodes.
  *
- *
- * @param node
+ * @param node Numeric variable node to free.
  */
 void free_numeric_var_node(Node *node);
 

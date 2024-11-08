@@ -120,6 +120,34 @@ Node *_new_bin_node(const char *name, void (*eval)(Node *this),
     return node;
 }
 
+/**
+ * This function should has to be called before the initial backprop call. A
+ * `topo_lvl` number for every node exists for a topological iterator. It needs
+ * a topology level to properly find the next node.
+ *
+ * @param root Root node of the tree to clean.
+ * @param lvl Topology level to set on root.
+ */
+void _set_topo_lvl(Node *node, size_t lvl) {
+    if (lvl < node->topo_lvl) {
+        node->topo_lvl = lvl;
+    }
+    for (size_t i = 0; i < node->n_children; ++i)
+        _set_topo_lvl(node->children[i], lvl + 1);
+}
+
+/**
+ * Zeroes out all gradients. Needs to be called at the beginning of every
+ * backprop call.
+ *
+ * @param root Root node of the tree.
+ */
+void _zero_grad(Node *node) {
+    node->grad = 0;
+    for (size_t i = 0; i < node->n_children; ++i)
+        _zero_grad(node->children[i]);
+}
+
 /*******************************************************************************
  * PUBLIC API
  ******************************************************************************/
@@ -158,20 +186,6 @@ void unvisit(Node *node) {
         unvisit(node->children[i]);
 }
 
-void set_topo_lvl(Node *node, size_t lvl) {
-    if (lvl < node->topo_lvl) {
-        node->topo_lvl = lvl;
-    }
-    for (size_t i = 0; i < node->n_children; ++i)
-        set_topo_lvl(node->children[i], lvl + 1);
-}
-
-void zero_grad(Node *node) {
-    node->grad = 0;
-    for (size_t i = 0; i < node->n_children; ++i)
-        zero_grad(node->children[i]);
-}
-
 void eval(Node *node) {
     for (size_t i = 0; i < node->n_children; ++i)
         eval(node->children[i]);
@@ -179,9 +193,16 @@ void eval(Node *node) {
 }
 
 void backprop(Node *root) {
+    if (root->topo_lvl == -1)
+        _set_topo_lvl(root, 0);
+    _zero_grad(root);
     root->grad = 1;
     TreeIter *it = new_tree_iter(root);
     Node *curr = root;
+    // Topological sorting is important, BFS would not work for example as
+    // gradient flow would "overtake" other signals. The "faster/shorter"
+    // signals have to wait for the slower ones to synchronize, this is ensured
+    // by a topology-based iteration.
     while ((curr = next_in_topo(it))) {
         curr->backprop(curr);
     }

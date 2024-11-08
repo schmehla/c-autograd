@@ -4,6 +4,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+/*******************************************************************************
+ * PUBLIC API
+ ******************************************************************************/
+
 Node *pop_front(NodeList *q) {
     Node *node = NULL;
     _Elem *first = q->first;
@@ -49,7 +53,7 @@ NodeList *new_node_list() {
 void free_node_list(NodeList *list) {
     _Elem *curr = list->first;
     while (curr != NULL) {
-        free_numeric_var_node(curr->data); // TODO this is bad
+        free_numeric_var_node(curr->data);
         _Elem *next = curr->next;
         free(curr);
         curr = next;

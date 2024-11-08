@@ -7,8 +7,9 @@
 #include <stdio.h>
 #include <string.h>
 
+// TODO WIP
 int main(void) {
-    char buf[1001];
+    char buf[1001]; // TODO make dynamic?
     FILE *file = fopen("../input.txt", "r");
     if (file == NULL) {
         assert(false);

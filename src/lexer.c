@@ -42,7 +42,7 @@ void _parse_num(Lexer *l) {
  * @param l Lexer instance.
  */
 void _parse_var(Lexer *l) {
-    size_t max_var_len = 20; // TODO bah
+    size_t max_var_len = 20; // TODO make dynamic length
     for (size_t i = 0; i < max_var_len; ++i) {
         if (!_is_a(_nxt(l))) {
             break;
