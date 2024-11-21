@@ -1,6 +1,7 @@
 #include "optimizer.h"
 #include "node.h"
 #include "node_list.h"
+
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
@@ -13,14 +14,13 @@ const size_t MAX_STEPS = 10e6;
  * PUBLIC API
  ******************************************************************************/
 
-// TODO WIP: works, but not for all inputs
 float optim(Node *node, NodeList *numeric_vars) {
     bool done;
     for (size_t t = 0; t < MAX_STEPS; ++t) {
         eval(node);
         backprop(node);
         done = true;
-        _Elem *curr = numeric_vars->first; // TODO _Elem is private!
+        _Elem *curr = numeric_vars->first;
         while (curr != NULL) {
             if (isnan(curr->data->grad) || isinf(curr->data->grad)) {
                 done = false;

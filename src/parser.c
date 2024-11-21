@@ -2,7 +2,7 @@
 #include "lexer.h"
 #include "node.h"
 #include "node_list.h"
-#include <assert.h>
+#include "utils.h"
 
 /*
  * The actual formal grammar for the parser comes from this YouTube video:
@@ -40,7 +40,7 @@ Node *_parse_fac(Lexer *l, NodeList *numeric_vars) {
         scan_token(l);
         node = _parse_expr(l, numeric_vars);
         if (peek_token(l) != R_PAR)
-            assert(false);
+            panic("Input does not match grammar!\n");
         scan_token(l);
         break;
     case VAR:
@@ -60,8 +60,8 @@ Node *_parse_fac(Lexer *l, NodeList *numeric_vars) {
         node = new_neg_node(NULL, _parse_fac(l, numeric_vars));
         break;
     default:
-        assert(false); // TODO replace all assertions with errors
-        break;
+        node = NULL;
+        panic("Input does not match grammar!\n");
     }
     return node;
 }
@@ -93,8 +93,7 @@ Node *_parse_term(Lexer *l, NodeList *numeric_vars) {
             node = new_div_node(NULL, node, _parse_term(l, numeric_vars));
             break;
         default:
-            assert(false);
-            break;
+            panic("Input does not match grammar!\n");
         }
     }
     return node;
@@ -127,8 +126,7 @@ Node *_parse_expr(Lexer *l, NodeList *numeric_vars) {
             node = new_sub_node(NULL, node, _parse_term(l, numeric_vars));
             break;
         default:
-            assert(false);
-            break;
+            panic("Input does not match grammar!\n");
         }
     }
     return node;

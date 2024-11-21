@@ -1,6 +1,6 @@
 #include "lexer.h"
+#include "utils.h"
 
-#include <assert.h>
 #include <ctype.h>
 #include <string.h>
 #include <sys/types.h>
@@ -42,7 +42,7 @@ void _parse_num(Lexer *l) {
  * @param l Lexer instance.
  */
 void _parse_var(Lexer *l) {
-    size_t max_var_len = 20; // TODO make dynamic length
+    size_t max_var_len = 20;
     for (size_t i = 0; i < max_var_len; ++i) {
         if (!_is_a(_nxt(l))) {
             break;
@@ -116,7 +116,8 @@ Token peek_token(Lexer *l) {
             return VAR;
         }
     }
-    assert(false);
+    return 0;
+    panic("Found unknown character: %s!\n", l->expr[l->nxt_tok_idx]);
 }
 
 void scan_token(Lexer *l) { l->tok_idx = l->nxt_tok_idx; }

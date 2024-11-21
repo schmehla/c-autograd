@@ -81,7 +81,7 @@ void eval(Node *root);
 void backprop(Node *root);
 
 /**
- * Free all nodes in a tree except for numeric variable nodes. These as they are
+ * Free all nodes in a tree except for numeric variable nodes. These are
  * indexed by their own node list which is used to free them.
  *
  * @param root Root node of the tree to free.
