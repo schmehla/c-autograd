@@ -1,4 +1,4 @@
-# `c-optim` - Developer Guide
+# `c-optim` - README.md
 
 ## Overview
 
