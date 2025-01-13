@@ -1,4 +1,4 @@
-# `c-optim` - README.md
+# `c-autograd` - README.md
 
 ## Overview
 
